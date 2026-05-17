@@ -1,0 +1,16 @@
+name = "kinkyo-note-api"
+main = "worker/index.ts"
+compatibility_date = "2026-05-16"
+workers_dev = true
+preview_urls = true
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kinkyo-note-db"
+database_id = "220e365f-4750-47f6-9a7d-3fda6e0c3bae"
+migrations_dir = "drizzle"
