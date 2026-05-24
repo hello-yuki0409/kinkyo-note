@@ -8,6 +8,7 @@ import { classmates, groups } from './db/schema'
 
 type Bindings = {
   DB: D1Database
+  ADMIN_TOKEN?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -64,7 +65,15 @@ app.get('/api/groups/:slug/classmates', async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: classmates.id,
+      name: classmates.name,
+      currentLocation: classmates.currentLocation,
+      job: classmates.job,
+      comment: classmates.comment,
+      snsUrl: classmates.snsUrl,
+      createdAt: classmates.createdAt,
+    })
     .from(classmates)
     .where(
       and(
@@ -75,6 +84,7 @@ app.get('/api/groups/:slug/classmates', async (c) => {
     )
     .orderBy(desc(classmates.createdAt))
 
+  c.header('Cache-Control', 'no-store')
   return c.json({ classmates: rows })
 })
 
@@ -108,10 +118,21 @@ app.post('/api/groups/:slug/classmates', async (c) => {
     .returning()
     .get()
 
-  return c.json({ classmate }, 201)
+  c.header('Cache-Control', 'no-store')
+  return c.json({ classmate: { id: classmate.id } }, 201)
 })
 
 app.patch('/api/classmates/:id', async (c) => {
+  const adminToken = c.env.ADMIN_TOKEN
+
+  if (!adminToken) {
+    throw new HTTPException(404, { message: 'Not found' })
+  }
+
+  if (c.req.header('Authorization') !== `Bearer ${adminToken}`) {
+    throw new HTTPException(401, { message: '認証が必要です' })
+  }
+
   const db = drizzle(c.env.DB)
   const id = Number(c.req.param('id'))
 
@@ -129,13 +150,18 @@ app.patch('/api/classmates/:id', async (c) => {
       updatedAt: now,
     })
     .where(eq(classmates.id, id))
-    .returning()
+    .returning({
+      id: classmates.id,
+      status: classmates.status,
+      updatedAt: classmates.updatedAt,
+    })
     .get()
 
   if (!classmate) {
     throw new HTTPException(404, { message: '投稿が見つかりません' })
   }
 
+  c.header('Cache-Control', 'no-store')
   return c.json({ classmate })
 })
 

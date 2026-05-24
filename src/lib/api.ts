@@ -1,4 +1,4 @@
-import type { Classmate, ClassmateAdminPatch, ClassmateInput, Group } from '../../shared/classmate'
+import type { CreatedClassmate, ClassmateInput, Group, PublicClassmate } from '../../shared/classmate'
 
 type ApiErrorBody = {
   message?: string
@@ -37,19 +37,12 @@ export async function fetchGroup(slug: string) {
 }
 
 export async function fetchClassmates(slug: string) {
-  return request<{ classmates: Classmate[] }>(`/api/groups/${slug}/classmates`)
+  return request<{ classmates: PublicClassmate[] }>(`/api/groups/${slug}/classmates`)
 }
 
 export async function createClassmate(slug: string, input: ClassmateInput) {
-  return request<{ classmate: Classmate }>(`/api/groups/${slug}/classmates`, {
+  return request<{ classmate: CreatedClassmate }>(`/api/groups/${slug}/classmates`, {
     method: 'POST',
-    body: JSON.stringify(input),
-  })
-}
-
-export async function updateClassmate(id: number, input: ClassmateAdminPatch) {
-  return request<{ classmate: Classmate }>(`/api/classmates/${id}`, {
-    method: 'PATCH',
     body: JSON.stringify(input),
   })
 }

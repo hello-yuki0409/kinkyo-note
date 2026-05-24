@@ -35,10 +35,10 @@ import {
 } from 'react-router-dom'
 import {
   classmateInputSchema,
-  type Classmate,
   type ClassmateFormValues,
   type ClassmateInput,
   type Group,
+  type PublicClassmate,
 } from '../shared/classmate'
 import { ApiError, createClassmate, fetchClassmates, fetchGroup } from './lib/api'
 import { formatRelativeTime, formatShortDate } from './lib/date'
@@ -511,7 +511,7 @@ const ClassmateCard = memo(function ClassmateCard({
   classmate,
   imageUrl,
 }: {
-  classmate: Classmate
+  classmate: PublicClassmate
   imageUrl: string
 }) {
   const initials = classmate.name.slice(0, 1)
@@ -766,7 +766,7 @@ function useSlugParam() {
 function useGroupBundle(slug: string) {
   const [state, setState] = useState<{
     group: Group | null
-    classmates: Classmate[]
+    classmates: PublicClassmate[]
     error: string | null
     isLoading: boolean
   }>({
@@ -824,7 +824,7 @@ function useGroupBundle(slug: string) {
 
 function useClassmates(slug: string) {
   const [state, setState] = useState<{
-    classmates: Classmate[]
+    classmates: PublicClassmate[]
     error: string | null
     isLoading: boolean
   }>({

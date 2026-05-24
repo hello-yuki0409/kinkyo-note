@@ -75,10 +75,18 @@ export type Classmate = {
   updatedAt: string
 }
 
+export type PublicClassmate = Pick<
+  Classmate,
+  'id' | 'name' | 'currentLocation' | 'job' | 'comment' | 'snsUrl' | 'createdAt'
+>
+
+export type CreatedClassmate = Pick<Classmate, 'id'>
+export type ClassmateAdminPatchResult = Pick<Classmate, 'id' | 'status' | 'updatedAt'>
+
 function isValidUrl(value: string) {
   try {
-    new URL(value)
-    return true
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:'
   } catch {
     return false
   }
