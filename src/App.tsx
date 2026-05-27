@@ -53,7 +53,8 @@ import {
   saveClassmateImageDataUrl,
 } from './lib/localImages'
 
-const defaultSlug = 'oita-2016'
+const defaultSlug = 'hanchu'
+const publicOrigin = 'https://kinkyo-note.bobu2784.workers.dev'
 const heroImage = '/han-chan.jpg'
 const parkImage =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80'
@@ -64,6 +65,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={`/g/${defaultSlug}`} replace />} />
+      <Route path="/g/oita-2016" element={<Navigate to={`/g/${defaultSlug}`} replace />} />
+      <Route path="/g/oita-2016/new" element={<Navigate to={`/g/${defaultSlug}/new`} replace />} />
+      <Route path="/g/oita-2016/feed" element={<Navigate to={`/g/${defaultSlug}/feed`} replace />} />
       <Route path="/g/:slug" element={<GroupHomePage />} />
       <Route path="/g/:slug/new" element={<NewClassmatePage />} />
       <Route path="/g/:slug/feed" element={<FeedPage />} />
@@ -77,7 +81,7 @@ function GroupHomePage() {
   const { group, classmates, error, isLoading, reload } = useGroupBundle(slug)
   const [isShareCopied, setIsShareCopied] = useState(false)
   const shareUrl = useMemo(() => {
-    return `${window.location.origin}/g/${slug}`
+    return `${publicOrigin}/g/${slug}`
   }, [slug])
 
   if (isLoading) return <ScreenShell title="近況ノート"><LoadingState /></ScreenShell>
