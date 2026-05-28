@@ -1,5 +1,18 @@
 # React + TypeScript + Vite
 
+## Docker Compose
+
+フロントエンドと API サーバーをまとめて起動できます。
+
+```sh
+docker-compose up
+```
+
+- Frontend: http://localhost:5173
+- API: http://localhost:8787/api/health
+
+API は起動時にローカル D1 へマイグレーションを適用します。ローカル D1 の状態をリセットしたい場合は、`docker-compose down -v` で Compose の volume を削除してください。
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
