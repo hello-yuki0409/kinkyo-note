@@ -51,8 +51,31 @@ export type ClassmateInput = z.infer<typeof classmateInputSchema>
 export type ClassmateFormValues = z.input<typeof classmateInputSchema>
 export type ClassmateAdminPatch = z.infer<typeof classmateAdminPatchSchema>
 
+export const groupInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'グループ名を入力してください')
+    .max(80, 'グループ名は80文字以内で入力してください'),
+  slug: z
+    .string()
+    .trim()
+    .min(3, 'URL名は3文字以上で入力してください')
+    .max(40, 'URL名は40文字以内で入力してください')
+    .regex(/^[a-z0-9-]+$/, 'URL名は半角英数字とハイフンで入力してください'),
+  description: z
+    .string()
+    .trim()
+    .max(200, '説明文は200文字以内で入力してください')
+    .optional()
+    .default(''),
+})
+
+export type GroupInput = z.infer<typeof groupInputSchema>
+
 export type Group = {
   id: number
+  ownerUserId: number | null
   name: string
   slug: string
   description: string
@@ -63,6 +86,7 @@ export type Group = {
 export type Classmate = {
   id: number
   groupId: number
+  authorUserId: number | null
   name: string
   nickname: string
   currentLocation: string
@@ -81,7 +105,28 @@ export type PublicClassmate = Pick<
 >
 
 export type CreatedClassmate = Pick<Classmate, 'id'>
+export type CreatedGroup = Pick<Group, 'id' | 'slug'>
 export type ClassmateAdminPatchResult = Pick<Classmate, 'id' | 'status' | 'updatedAt'>
+export type CurrentUser = {
+  id: number
+  displayName: string
+  avatarUrl: string
+}
+export type MyClassmateSummary = Pick<Classmate, 'id' | 'createdAt' | 'updatedAt'>
+export type EditableClassmate = Pick<
+  Classmate,
+  | 'id'
+  | 'name'
+  | 'nickname'
+  | 'currentLocation'
+  | 'job'
+  | 'comment'
+  | 'snsUrl'
+  | 'visibility'
+  | 'createdAt'
+  | 'updatedAt'
+>
+export type UpdateClassmateResult = Pick<Classmate, 'id' | 'updatedAt'>
 
 function isValidUrl(value: string) {
   try {
