@@ -323,13 +323,11 @@ function NewClassmatePage() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ClassmateFormValues, unknown, ClassmateInput>({
     resolver: zodResolver(classmateInputSchema),
     defaultValues,
   });
-  const selectedVisibility = watch("visibility");
 
   useEffect(() => {
     let isActive = true;
@@ -612,19 +610,15 @@ function NewClassmatePage() {
             <input type="radio" value="public" {...register("visibility")} />
             公開（みんなに見える）
           </label>
-          <label className="radio-row mt-3">
+          <label className="radio-row mt-3 text-stone-400">
             <input
+              disabled
               type="radio"
               value="organizer_only"
               {...register("visibility")}
             />
             限定公開（幹事だけに見える）
           </label>
-          {selectedVisibility === "organizer_only" ? (
-            <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-semibold leading-6 text-amber-800">
-              まだ実装中の機能です
-            </p>
-          ) : null}
         </div>
 
         <button
@@ -657,13 +651,11 @@ function EditClassmatePage() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ClassmateFormValues, unknown, ClassmateInput>({
     resolver: zodResolver(classmateInputSchema),
     defaultValues: emptyClassmateFormValues,
   });
-  const selectedVisibility = watch("visibility");
 
   useEffect(() => {
     let isActive = true;
@@ -830,19 +822,15 @@ function EditClassmatePage() {
               <input type="radio" value="public" {...register("visibility")} />
               公開（みんなに見える）
             </label>
-            <label className="radio-row mt-3">
+            <label className="radio-row mt-3 text-stone-400">
               <input
+                disabled
                 type="radio"
                 value="organizer_only"
                 {...register("visibility")}
               />
               限定公開（幹事だけに見える）
             </label>
-            {selectedVisibility === "organizer_only" ? (
-              <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-semibold leading-6 text-amber-800">
-                まだ実装中の機能です
-              </p>
-            ) : null}
           </div>
 
           <button
@@ -963,6 +951,7 @@ function PostLoginSubmitPage() {
 function LoginPage() {
   const [searchParams] = useSearchParams();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
+  const backTo = getLoginBackTo(returnTo);
   const loginUrl = `/api/oauth/line/authorization?returnTo=${encodeURIComponent(returnTo)}`;
 
   return (
@@ -981,7 +970,7 @@ function LoginPage() {
           </a>
           <Link
             className="mt-3 flex h-12 items-center justify-center rounded-md border border-stone-200 bg-white text-sm font-bold text-stone-800"
-            to={returnTo}
+            to={backTo}
           >
             戻る
           </Link>
@@ -1557,6 +1546,18 @@ function sanitizeReturnTo(value: string | null) {
   }
 
   return value;
+}
+
+function getLoginBackTo(returnTo: string) {
+  const postLoginSubmitMatch = returnTo.match(
+    /^\/g\/([^/]+)\/post-login-submit$/,
+  );
+
+  if (postLoginSubmitMatch) {
+    return `/g/${postLoginSubmitMatch[1]}/new`;
+  }
+
+  return returnTo;
 }
 
 function navigateWithViewTransition(callback: () => void) {
