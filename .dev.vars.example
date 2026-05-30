@@ -1,0 +1,5 @@
+APP_ORIGIN=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8787
+LINE_CHANNEL_ID=your-line-channel-id
+LINE_CHANNEL_SECRET=your-line-channel-secret
+LINE_REDIRECT_URI=your-line-callback-url
