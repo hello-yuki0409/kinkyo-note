@@ -15,6 +15,13 @@
       "when": 1779006000000,
       "tag": "0001_seed_default_group",
       "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780116391434,
+      "tag": "0002_nebulous_nitro",
+      "breakpoints": true
     }
   ]
 }

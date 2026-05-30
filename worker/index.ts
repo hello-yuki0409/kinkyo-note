@@ -370,7 +370,7 @@ app.post('/api/groups/:slug/classmates', async (c) => {
       job: input.job,
       comment: input.comment,
       snsUrl: input.snsUrl,
-      visibility: input.visibility,
+      visibility: 'public',
       status: 'published',
       createdAt: now,
       updatedAt: now,
@@ -473,7 +473,7 @@ app.patch('/api/me/groups/:slug/classmates/:id', async (c) => {
       job: input.job,
       comment: input.comment,
       snsUrl: input.snsUrl,
-      visibility: input.visibility,
+      visibility: 'public',
       updatedAt: now,
     })
     .where(
