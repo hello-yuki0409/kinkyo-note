@@ -22,6 +22,17 @@ export function saveClassmateAvatarDataUrl(
   }
 }
 
+export function clearClassmateAvatarDataUrl(classmateId: number) {
+  const avatarMap = readStoredImageMap(classmateAvatarsKey)
+  avatarMap[String(classmateId)] = ''
+
+  try {
+    localStorage.setItem(classmateAvatarsKey, JSON.stringify(avatarMap))
+  } catch {
+    // Icon persistence is best-effort; the post itself should still complete.
+  }
+}
+
 export async function createLocalAvatarDataUrl(file: File) {
   const image = await loadImage(file)
   const size = 512

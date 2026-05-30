@@ -59,6 +59,7 @@ import {
   saveClassmateDraft,
 } from "./lib/draft";
 import {
+  clearClassmateAvatarDataUrl,
   createLocalAvatarDataUrl,
   getClassmateAvatarMap,
   saveClassmateAvatarDataUrl,
@@ -649,6 +650,12 @@ function EditClassmatePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [commentLength, setCommentLength] = useState(0);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [avatarObjectUrl, setAvatarObjectUrl] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isAvatarRemoved, setIsAvatarRemoved] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const {
     register,
     handleSubmit,
@@ -690,6 +697,16 @@ function EditClassmatePage() {
 
         reset(values);
         setCommentLength(values.comment.length);
+        setSelectedAvatar(null);
+        setAvatarError(null);
+        setIsAvatarRemoved(false);
+        setAvatarObjectUrl((currentUrl) => {
+          if (currentUrl) URL.revokeObjectURL(currentUrl);
+          return null;
+        });
+        setAvatarPreviewUrl(
+          getClassmateAvatarMap()[String(classmateId)] || null,
+        );
         setIsLoading(false);
       })
       .catch((error: unknown) => {
@@ -714,7 +731,18 @@ function EditClassmatePage() {
   async function onSubmit(input: ClassmateInput) {
     setSubmitError(null);
     try {
+      const avatarDataUrl = selectedAvatar
+        ? await createLocalAvatarDataUrl(selectedAvatar)
+        : null;
+
       await updateMyClassmate(slug, classmateId, input);
+
+      if (avatarDataUrl) {
+        saveClassmateAvatarDataUrl(classmateId, avatarDataUrl);
+      } else if (isAvatarRemoved) {
+        clearClassmateAvatarDataUrl(classmateId);
+      }
+
       navigateWithViewTransition(() => {
         navigate(`/g/${slug}/feed`, { replace: true });
       });
@@ -734,6 +762,58 @@ function EditClassmatePage() {
     const formData = new FormData(event.currentTarget);
     setCommentLength(String(formData.get("comment") ?? "").length);
   }
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setAvatarError(null);
+
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      resetAvatarFileInput();
+      setAvatarError("JPGまたはPNGを選択してください");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      resetAvatarFileInput();
+      setAvatarError("アイコン画像は5MB以内で選択してください");
+      return;
+    }
+
+    const nextObjectUrl = URL.createObjectURL(file);
+    setAvatarObjectUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return nextObjectUrl;
+    });
+    setAvatarPreviewUrl(nextObjectUrl);
+    setSelectedAvatar(file);
+    setIsAvatarRemoved(false);
+  }
+
+  function clearAvatarInput() {
+    resetAvatarFileInput();
+    setAvatarObjectUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return null;
+    });
+    setAvatarPreviewUrl(null);
+    setSelectedAvatar(null);
+    setAvatarError(null);
+    setIsAvatarRemoved(true);
+  }
+
+  function resetAvatarFileInput() {
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = "";
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (avatarObjectUrl) URL.revokeObjectURL(avatarObjectUrl);
+    };
+  }, [avatarObjectUrl]);
 
   return (
     <ScreenShell
@@ -814,6 +894,62 @@ function EditClassmatePage() {
               {...register("snsUrl")}
             />
           </Field>
+
+          <div>
+            <p className="mb-3 text-sm font-bold">アイコン画像（任意）</p>
+            <input
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={handleAvatarChange}
+              ref={avatarInputRef}
+              type="file"
+            />
+            <div className="flex items-center gap-4 rounded-md border border-stone-200 bg-white p-4">
+              {avatarPreviewUrl ? (
+                <div className="relative size-24 shrink-0">
+                  <img
+                    alt=""
+                    className="size-24 rounded-full object-cover ring-1 ring-stone-200"
+                    src={avatarPreviewUrl}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  aria-label="アイコン画像を選択"
+                  className="grid size-24 shrink-0 place-items-center rounded-full border border-dashed border-stone-300 bg-stone-50 text-stone-500"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <Camera size={26} />
+                </button>
+              )}
+              <div className="min-w-0 flex-1 space-y-2">
+                <button
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-stone-900 text-sm font-bold text-white"
+                  onClick={() => avatarInputRef.current?.click()}
+                  type="button"
+                >
+                  <Camera size={18} />
+                  {avatarPreviewUrl ? "アイコンを変更" : "アイコンを選択"}
+                </button>
+                {avatarPreviewUrl ? (
+                  <button
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-stone-200 text-sm font-bold text-stone-800"
+                    onClick={clearAvatarInput}
+                    type="button"
+                  >
+                    <X size={18} />
+                    削除
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {avatarError ? (
+              <p className="mt-2 text-sm font-semibold text-red-600">
+                {avatarError}
+              </p>
+            ) : null}
+          </div>
 
           <div>
             <p className="mb-3 text-sm font-bold">公開範囲</p>
@@ -1033,7 +1169,7 @@ function FeedPage() {
         ) : null}
         {sortedClassmates.map((classmate) => (
           <ClassmateCard
-            avatarUrl={avatarByClassmateId[String(classmate.id)] ?? null}
+            avatarUrl={avatarByClassmateId[String(classmate.id)] || null}
             canEdit={myClassmateIds.has(classmate.id)}
             classmate={classmate}
             key={classmate.id}
