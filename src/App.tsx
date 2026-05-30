@@ -59,18 +59,14 @@ import {
   saveClassmateDraft,
 } from "./lib/draft";
 import {
-  createLocalImageDataUrl,
-  getClassmateImageMap,
-  saveClassmateImageDataUrl,
+  createLocalAvatarDataUrl,
+  getClassmateAvatarMap,
+  saveClassmateAvatarDataUrl,
 } from "./lib/localImages";
 
 const defaultSlug = "hanchu";
 const publicOrigin = "https://kinkyo-note.bobu2784.workers.dev";
 const heroImage = "/han-chan.jpg";
-const parkImage =
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80";
-const bakeryImage =
-  "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80";
 const pendingClassmateSubmitPrefix = "kinkyo-note:pending-classmate-submit:v1:";
 const emptyClassmateFormValues: ClassmateFormValues = {
   name: "",
@@ -316,10 +312,10 @@ function NewClassmatePage() {
   const [commentLength, setCommentLength] = useState(
     defaultValues.comment.length,
   );
-  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const {
     register,
     handleSubmit,
@@ -359,16 +355,16 @@ function NewClassmatePage() {
 
   async function onSubmit(input: ClassmateInput) {
     setSubmitError(null);
-    let imageDataUrl: string | null = null;
+    let avatarDataUrl: string | null = null;
 
     try {
-      imageDataUrl = selectedPhoto
-        ? await createLocalImageDataUrl(selectedPhoto)
+      avatarDataUrl = selectedAvatar
+        ? await createLocalAvatarDataUrl(selectedAvatar)
         : null;
       const { classmate } = await createClassmate(slug, input);
 
-      if (imageDataUrl) {
-        saveClassmateImageDataUrl(classmate.id, imageDataUrl);
+      if (avatarDataUrl) {
+        saveClassmateAvatarDataUrl(classmate.id, avatarDataUrl);
       }
 
       clearClassmateDraft(slug);
@@ -378,7 +374,7 @@ function NewClassmatePage() {
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         saveClassmateDraft(slug, input);
-        savePendingClassmateSubmit(slug, input, imageDataUrl);
+        savePendingClassmateSubmit(slug, input, avatarDataUrl);
         navigate(
           `/login?returnTo=${encodeURIComponent(`/g/${slug}/post-login-submit`)}`,
         );
@@ -419,48 +415,48 @@ function NewClassmatePage() {
     });
   }
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    setPhotoError(null);
+    setAvatarError(null);
 
     if (!file) return;
 
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      clearPhotoInput();
-      setPhotoError("JPGまたはPNGを選択してください");
+      clearAvatarInput();
+      setAvatarError("JPGまたはPNGを選択してください");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      clearPhotoInput();
-      setPhotoError("写真は5MB以内で選択してください");
+      clearAvatarInput();
+      setAvatarError("アイコン画像は5MB以内で選択してください");
       return;
     }
 
-    setPhotoPreviewUrl((currentUrl) => {
+    setAvatarPreviewUrl((currentUrl) => {
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       return URL.createObjectURL(file);
     });
-    setSelectedPhoto(file);
+    setSelectedAvatar(file);
   }
 
-  function clearPhotoInput() {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  function clearAvatarInput() {
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = "";
     }
-    setPhotoPreviewUrl((currentUrl) => {
+    setAvatarPreviewUrl((currentUrl) => {
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       return null;
     });
-    setSelectedPhoto(null);
-    setPhotoError(null);
+    setSelectedAvatar(null);
+    setAvatarError(null);
   }
 
   useEffect(() => {
     return () => {
-      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     };
-  }, [photoPreviewUrl]);
+  }, [avatarPreviewUrl]);
 
   if (isCheckingExistingPost) {
     return (
@@ -552,51 +548,57 @@ function NewClassmatePage() {
         </Field>
 
         <div>
-          <p className="mb-3 text-sm font-bold">写真を追加（任意）</p>
+          <p className="mb-3 text-sm font-bold">アイコン画像（任意）</p>
           <input
             accept="image/jpeg,image/png"
             className="hidden"
-            onChange={handlePhotoChange}
-            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            ref={avatarInputRef}
             type="file"
           />
-          {photoPreviewUrl ? (
-            <div className="relative overflow-hidden rounded-md border border-stone-200 bg-white">
-              <img
-                alt=""
-                className="h-44 w-full object-cover"
-                src={photoPreviewUrl}
-              />
+          <div className="flex items-center gap-4 rounded-md border border-stone-200 bg-white p-4">
+            {avatarPreviewUrl ? (
+              <div className="relative size-24 shrink-0">
+                <img
+                  alt=""
+                  className="size-24 rounded-full object-cover ring-1 ring-stone-200"
+                  src={avatarPreviewUrl}
+                />
+              </div>
+            ) : (
               <button
-                aria-label="写真を削除"
-                className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-white/95 text-stone-800 shadow"
-                onClick={clearPhotoInput}
                 type="button"
+                aria-label="アイコン画像を選択"
+                className="grid size-24 shrink-0 place-items-center rounded-full border border-dashed border-stone-300 bg-stone-50 text-stone-500"
+                onClick={() => avatarInputRef.current?.click()}
               >
-                <X size={20} />
+                <Camera size={26} />
               </button>
+            )}
+            <div className="min-w-0 flex-1 space-y-2">
               <button
-                className="flex h-12 w-full items-center justify-center gap-2 text-sm font-bold text-stone-800"
-                onClick={() => fileInputRef.current?.click()}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-stone-900 text-sm font-bold text-white"
+                onClick={() => avatarInputRef.current?.click()}
                 type="button"
               >
                 <Camera size={18} />
-                写真を変更
+                {avatarPreviewUrl ? "アイコンを変更" : "アイコンを選択"}
               </button>
+              {avatarPreviewUrl ? (
+                <button
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-stone-200 text-sm font-bold text-stone-800"
+                  onClick={clearAvatarInput}
+                  type="button"
+                >
+                  <X size={18} />
+                  削除
+                </button>
+              ) : null}
             </div>
-          ) : (
-            <button
-              type="button"
-              className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-stone-300 bg-white text-sm font-semibold text-stone-800"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Camera size={24} />
-              写真を選択
-            </button>
-          )}
-          {photoError ? (
+          </div>
+          {avatarError ? (
             <p className="mt-2 text-sm font-semibold text-red-600">
-              {photoError}
+              {avatarError}
             </p>
           ) : null}
         </div>
@@ -629,9 +631,9 @@ function NewClassmatePage() {
           {isSubmitting ? (
             <LoaderCircle className="animate-spin" size={20} />
           ) : (
-            <Send size={19} />
+            <Send size={20} />
           )}
-          入力内容を投稿する
+          近況を投稿する
         </button>
       </form>
     </ScreenShell>
@@ -877,8 +879,8 @@ function PostLoginSubmitPage() {
       try {
         const { classmate } = await createClassmate(slug, submit.input);
 
-        if (submit.imageDataUrl) {
-          saveClassmateImageDataUrl(classmate.id, submit.imageDataUrl);
+        if (submit.avatarDataUrl) {
+          saveClassmateAvatarDataUrl(classmate.id, submit.avatarDataUrl);
         }
 
         clearPendingClassmateSubmit(slug);
@@ -985,7 +987,7 @@ function FeedPage() {
   const { classmates, error, isLoading, myClassmates, reload } =
     useClassmates(slug);
   const [order, setOrder] = useState<"new" | "old">("new");
-  const [imageByClassmateId] = useState(() => getClassmateImageMap());
+  const [avatarByClassmateId] = useState(() => getClassmateAvatarMap());
   const myClassmateIds = useMemo(() => {
     return new Set(myClassmates.map((classmate) => classmate.id));
   }, [myClassmates]);
@@ -1029,14 +1031,11 @@ function FeedPage() {
         {!isLoading && !error && sortedClassmates.length === 0 ? (
           <EmptyState message="まだ公開中の近況はありません" />
         ) : null}
-        {sortedClassmates.map((classmate, index) => (
+        {sortedClassmates.map((classmate) => (
           <ClassmateCard
+            avatarUrl={avatarByClassmateId[String(classmate.id)] ?? null}
             canEdit={myClassmateIds.has(classmate.id)}
             classmate={classmate}
-            imageUrl={
-              imageByClassmateId[String(classmate.id)] ??
-              (index % 2 === 0 ? parkImage : bakeryImage)
-            }
             key={classmate.id}
             slug={slug}
           />
@@ -1047,14 +1046,14 @@ function FeedPage() {
 }
 
 const ClassmateCard = memo(function ClassmateCard({
+  avatarUrl,
   canEdit,
   classmate,
-  imageUrl,
   slug,
 }: {
+  avatarUrl: string | null;
   canEdit: boolean;
   classmate: PublicClassmate;
-  imageUrl: string;
   slug: string;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1063,9 +1062,18 @@ const ClassmateCard = memo(function ClassmateCard({
   return (
     <article className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-stone-200">
       <div className="flex items-start gap-3">
-        <div className="grid size-12 shrink-0 place-items-center rounded-full bg-green-100 text-lg font-bold text-green-700">
-          {initials}
-        </div>
+        {avatarUrl ? (
+          <img
+            alt=""
+            className="size-12 shrink-0 rounded-full object-cover ring-1 ring-stone-200"
+            loading="lazy"
+            src={avatarUrl}
+          />
+        ) : (
+          <div className="grid size-12 shrink-0 place-items-center rounded-full bg-green-100 text-lg font-bold text-green-700">
+            {initials}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1126,12 +1134,6 @@ const ClassmateCard = memo(function ClassmateCard({
           ) : null}
         </div>
       </div>
-      <img
-        alt=""
-        className="mt-4 h-28 w-full rounded-md object-cover"
-        loading="lazy"
-        src={imageUrl}
-      />
       <div className="mt-3 flex gap-6 text-sm text-stone-600">
         <span className="flex items-center gap-1">
           <Heart size={18} />
@@ -1483,19 +1485,19 @@ function useClassmates(slug: string) {
 }
 
 type PendingClassmateSubmit = {
-  imageDataUrl: string | null;
+  avatarDataUrl: string | null;
   input: ClassmateInput;
 };
 
 function savePendingClassmateSubmit(
   slug: string,
   input: ClassmateInput,
-  imageDataUrl: string | null,
+  avatarDataUrl: string | null,
 ) {
   try {
     sessionStorage.setItem(
       getPendingClassmateSubmitKey(slug),
-      JSON.stringify({ imageDataUrl, input } satisfies PendingClassmateSubmit),
+      JSON.stringify({ avatarDataUrl, input } satisfies PendingClassmateSubmit),
     );
   } catch {
     // If storage is unavailable, the login flow will fall back to the draft.
@@ -1507,14 +1509,18 @@ function getPendingClassmateSubmit(slug: string): PendingClassmateSubmit | null 
     const rawValue = sessionStorage.getItem(getPendingClassmateSubmitKey(slug));
     if (!rawValue) return null;
 
-    const parsedValue = JSON.parse(rawValue) as Partial<PendingClassmateSubmit>;
+    const parsedValue = JSON.parse(rawValue) as Partial<
+      PendingClassmateSubmit & { imageDataUrl: string | null }
+    >;
     const input = classmateInputSchema.parse(parsedValue.input);
 
     return {
-      imageDataUrl:
-        typeof parsedValue.imageDataUrl === "string"
-          ? parsedValue.imageDataUrl
-          : null,
+      avatarDataUrl:
+        typeof parsedValue.avatarDataUrl === "string"
+          ? parsedValue.avatarDataUrl
+          : typeof parsedValue.imageDataUrl === "string"
+            ? parsedValue.imageDataUrl
+            : null,
       input,
     };
   } catch {

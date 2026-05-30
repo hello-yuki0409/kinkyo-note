@@ -1,8 +1,60 @@
-const classmateImagesKey = 'kinkyo-note:classmate-images:v1'
+const classmateAvatarsKey = 'kinkyo-note:classmate-avatars:v1'
+const legacyClassmateImagesKey = 'kinkyo-note:classmate-images:v1'
 
-export function getClassmateImageMap() {
+export function getClassmateAvatarMap() {
+  return {
+    ...readStoredImageMap(legacyClassmateImagesKey),
+    ...readStoredImageMap(classmateAvatarsKey),
+  }
+}
+
+export function saveClassmateAvatarDataUrl(
+  classmateId: number,
+  dataUrl: string,
+) {
+  const avatarMap = readStoredImageMap(classmateAvatarsKey)
+  avatarMap[String(classmateId)] = dataUrl
+
   try {
-    const rawValue = localStorage.getItem(classmateImagesKey)
+    localStorage.setItem(classmateAvatarsKey, JSON.stringify(avatarMap))
+  } catch {
+    // Icon persistence is best-effort; the post itself should still complete.
+  }
+}
+
+export async function createLocalAvatarDataUrl(file: File) {
+  const image = await loadImage(file)
+  const size = 512
+  const sourceSize = Math.min(image.width, image.height)
+  const sourceX = Math.max(0, Math.round((image.width - sourceSize) / 2))
+  const sourceY = Math.max(0, Math.round((image.height - sourceSize) / 2))
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('アイコン画像を処理できませんでした')
+  }
+
+  canvas.width = size
+  canvas.height = size
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    size,
+    size,
+  )
+
+  return canvas.toDataURL('image/jpeg', 0.82)
+}
+
+function readStoredImageMap(storageKey: string) {
+  try {
+    const rawValue = localStorage.getItem(storageKey)
     if (!rawValue) return {}
 
     const parsedValue = JSON.parse(rawValue)
@@ -12,32 +64,6 @@ export function getClassmateImageMap() {
   } catch {
     return {}
   }
-}
-
-export function saveClassmateImageDataUrl(classmateId: number, dataUrl: string) {
-  const imageMap = getClassmateImageMap()
-  imageMap[String(classmateId)] = dataUrl
-  localStorage.setItem(classmateImagesKey, JSON.stringify(imageMap))
-}
-
-export async function createLocalImageDataUrl(file: File) {
-  const image = await loadImage(file)
-  const maxSize = 1200
-  const scale = Math.min(1, maxSize / Math.max(image.width, image.height))
-  const width = Math.max(1, Math.round(image.width * scale))
-  const height = Math.max(1, Math.round(image.height * scale))
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-
-  if (!context) {
-    throw new Error('写真を処理できませんでした')
-  }
-
-  canvas.width = width
-  canvas.height = height
-  context.drawImage(image, 0, 0, width, height)
-
-  return canvas.toDataURL('image/jpeg', 0.82)
 }
 
 function loadImage(file: File) {
@@ -51,7 +77,7 @@ function loadImage(file: File) {
     }
     image.onerror = () => {
       URL.revokeObjectURL(imageUrl)
-      reject(new Error('写真を読み込めませんでした'))
+      reject(new Error('アイコン画像を読み込めませんでした'))
     }
     image.src = imageUrl
   })
